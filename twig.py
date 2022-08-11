@@ -6,6 +6,70 @@
 import json
 import sys
 
+keywords = ["class","for","function","if","return","while"]
+lonetokens = ["{","}","(",")","#"]
+
+def tokenize(lines):
+    tokens = [];
+    # first splitting up tokens by spaces in the default fashion    
+    for line in lines:
+        tokens.extend( line.split() );
+
+    # and now all the special characters which get a token of their own
+    for tind in range(len(tokens)-1, -1, -1):
+        t = tokens[tind]
+        
+        for cind in range(len(t)-1, -1, -1):
+            c = t[cind];
+
+            #print("t: " + t)
+            #print("c: " + c)
+
+            try:
+                aind = lonetokens.index(c)
+            except:
+                pass;
+            else:
+                before = t[:cind]; #print("before: " + before)
+                after = t[cind+1:]; #print("after: " + after)
+
+                tokens.pop(tind)
+
+                tokens.insert(tind, after);
+                tokens.insert(tind, c);
+                tokens.insert(tind, before);
+
+                t = tokens[tind]
+
+    # removing any blank tokens
+    for tind in range(len(tokens)-1, -1, -1):
+        t = tokens[tind]
+        if t == "":
+            tokens.pop(tind);
+
+    print("\nTokens:")
+    for t in tokens:
+        print(t)
+
+    return tokens;
+
+
+def parseTokens(tokens):
+    # list of what objects we are currently in from shallow to deep
+    # I might make this list contain both the name and starting index of the object, and possibly more info like type
+    tree = [];
+    # for skipping over tokens if they dont need to be handled, or were previously handled
+    skipcounter = 0;
+
+    for tind in range(0, len(tokens)):
+        if skipcounter > 0:
+            skipcounter -= 1;
+            continue;
+        
+        t = tokens[tind];   
+    
+    return;
+
 def parseDefinitions():
     return;
 
@@ -26,37 +90,7 @@ def main():
     in_lines = in_file.readlines();
     in_file.close();
 
-    in_tokens = [];
-
-    # first splitting up tokens by spaces in the default fashion    
-    for line in in_lines:
-        in_tokens.extend( line.split() );
-
-    # and now all the characters which get a token of their own
-    alonetokens = ["{","}","(",")","#"];
-
-    for tind in range(len(in_tokens)-1, -1, -1):
-        t = in_tokens[tind]
-        
-        for cind in range(len(t)-1, -1, -1):
-            c = t[cind]; print(c)
-
-            try:
-                aind = alonetokens.index(c)
-            except:
-                pass;
-            else:
-                before = t[:cind+1]; print("before: " + before)
-                after = t[cind+1:]; print("after: " + after)
-                
-                in_tokens[tind - 1] = before;
-        
-
-    print("\nTokens:")
-    for t in in_tokens:
-        print(t)
-            
-    
-    #print("\n" + in_lines);
+    in_tokens = tokenize(in_lines);
+    parseTokens(in_tokens);
 
 main();

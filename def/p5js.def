@@ -14,7 +14,9 @@
 	"function": {
 		"def": "&N",
 		"bracketo": "{",
-		"bracketc": "}"
+		"bracketc": "}",
+		
+		"return": "return"
 	},
 	
 	"if": {
