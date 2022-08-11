@@ -1,0 +1,25 @@
+{
+	"class": {
+		"def": "class &N",
+		"bracketo": "{",
+		"bracketc": "}"
+	},
+
+	"for": {
+		"def": "for",
+		"bracketo": "{",
+		"bracketc": "}"
+	},
+	
+	"function": {
+		"def": "&N",
+		"bracketo": "{",
+		"bracketc": "}"
+	},
+	
+	"if": {
+		"def": "if",
+		"bracketo": "{",
+		"bracketc": "}"
+	}
+}
