@@ -6,14 +6,19 @@
 import json
 import sys
 
-keywords = ["class","for","function","if","return","while"]
-lonetokens = ["{","}","(",")","#"]
+from identifier import Identifier
+
+keywords = ["class","extends","false","for","function","if","return","true","while"]
+lonetokens = ["{","}","(",")","#",";","."]
+
+identifiers = {};
 
 def tokenize(lines):
     tokens = [];
-    # first splitting up tokens by spaces in the default fashion    
+    # first splitting up tokens by spaces and line breaks in the default fashion    
     for line in lines:
         tokens.extend( line.split() );
+        tokens.append("\n")
 
     # and now all the special characters which get a token of their own
     for tind in range(len(tokens)-1, -1, -1):
@@ -47,12 +52,30 @@ def tokenize(lines):
         if t == "":
             tokens.pop(tind);
 
-    print("\nTokens:")
-    for t in tokens:
-        print(t)
+    #print("\nTokens:")
+    #for t in tokens:
+        #print(t)
 
     return tokens;
 
+def exitWithError(line, message):
+    sys.exit(message + " on line " + str(line))
+
+# Identifiers are the user defined names of things
+def isIdentifier(token):
+    try:
+        keyind = keywords.index(token)
+    except:
+        pass;
+    else:
+        return False
+
+    try:
+        ltind = lonetokens.index(token)
+    except:
+        return True
+    else:
+        return False
 
 def parseTokens(tokens):
     # list of what objects we are currently in from shallow to deep
@@ -60,13 +83,33 @@ def parseTokens(tokens):
     tree = [];
     # for skipping over tokens if they dont need to be handled, or were previously handled
     skipcounter = 0;
+    # list of user-defined things
+    identifiers = {};
+
+    currentline = 1;
 
     for tind in range(0, len(tokens)):
         if skipcounter > 0:
             skipcounter -= 1;
             continue;
         
-        t = tokens[tind];   
+        t = tokens[tind];        
+        nind = tind + 1;
+
+        if t == "\n":
+            currentline += 1; continue;
+
+        print(t)
+        
+        if t == "class":
+            if nind >= len(tokens):
+                exitWithError(currentline, "Syntax error: no name for class")
+            
+            nt = tokens[nind];
+            if not isIdentifier(nt):
+                exitWithError(currentline, "Syntax error: invalid class name")
+                
+            ident = Identifier(nt, "class"); identifiers[nt] = ident;
     
     return;
 
