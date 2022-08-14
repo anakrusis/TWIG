@@ -1,0 +1,57 @@
+{
+	"bracketr": "end",
+
+	"class": {
+		"form": [
+		
+		"@N = {}; @N.__index = @N; @B"
+		
+		],
+		
+		"{": "",
+		"}": "",
+		
+		"constructor": {
+			"form": [ 
+			
+			 "@N.new ( @P ){",
+			 
+			 "local self = setmetatable({}, @N);",
+			 
+			 "local self = setmetatable( @S.new(@P) , @N);",
+			 
+			 "@B",
+			 
+			 "return self",
+			 
+			 "}",
+			 
+			 "setmetatable(@N, {__index = @S});"
+			
+			],
+			
+			"conditions": [
+				1, "not @S", "@S", 1, 1, 1, "@S"
+			]
+		}
+	},
+
+	"for": {
+		"form": "for",
+		"{": "do",
+		"}": "end"
+	},
+	
+	"function": {
+		"form": "function @N",
+		"{": "",
+		"}": "end"
+	},
+	
+	"if": {
+		"form": "if",
+		"{": "then",
+		"}": "end"
+	}
+
+}

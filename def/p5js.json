@@ -1,0 +1,35 @@
+{
+	"bracketl": "{",
+	"bracketr": "}",
+
+	"class": {
+		"form": [ 
+			"class @N",
+			"extends @S",
+			"{@B}"
+		],
+		
+		"conditions": [
+			1, "@S", 1
+		],
+		
+		"constructor": {
+			"form": [
+				"constructor (@P){ @B }"
+			]
+		}
+	},
+
+	"for": {
+		"form": "for"
+	},
+	
+	"function": {
+		"form": "@N(@P){@B}",		
+		"return": "return"
+	},
+	
+	"if": {
+		"form": "if(@P){@B}"
+	}
+}

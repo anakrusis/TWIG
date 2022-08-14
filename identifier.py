@@ -2,4 +2,5 @@
 class Identifier:
     def __init__(self, name, itype):
         self.name = name
+        self.parentname = False
         self.itype = itype
