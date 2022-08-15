@@ -1,7 +1,7 @@
 # TWIG (Transpiler for Windowed Interactive Graphics)
 # started 2022-08-10
 
-# usage: python twig.py [file in] [def] [file out]
+# usage: python twig.py [file in] [def]
 
 import json
 import sys
@@ -9,7 +9,7 @@ import sys
 from identifier import Identifier
 
 keywords = ["class","extends","false","for","function","if","return","true","while"]
-lonetokens = ["{","}","(",")","#",";",".","=","+","-","*","/"]
+lonetokens = ["{","}","(",")","#",";",".","=","+","-","*","/","\""]
 
 identifiers = {};
 
@@ -21,40 +21,12 @@ def tokenize(lines):
         tokens.append("\n")
 
     # and now all the special characters which get a token of their own
-    for tind in range(len(tokens)-1, -1, -1):
-        t = tokens[tind]
-        
-        for cind in range(len(t)-1, -1, -1):
-            c = t[cind];
+    for i in range( 0, len(lonetokens) ):
+        seperateTokens( tokens, lonetokens[i] );
 
-            #print("t: " + t)
-            #print("c: " + c)
-
-            try:
-                aind = lonetokens.index(c)
-            except:
-                pass;
-            else:
-                before = t[:cind]; #print("before: " + before)
-                after = t[cind+1:]; #print("after: " + after)
-
-                tokens.pop(tind)
-
-                tokens.insert(tind, after);
-                tokens.insert(tind, c);
-                tokens.insert(tind, before);
-
-                t = tokens[tind]
-
-    # removing any blank tokens
-    for tind in range(len(tokens)-1, -1, -1):
-        t = tokens[tind]
-        if t == "":
-            tokens.pop(tind);
-
-    #print("\nTokens:")
-    #for t in tokens:
-        #print(t)
+    print("\nTokens:")
+    for t in tokens:
+        print(t)
 
     return tokens;
 
@@ -139,53 +111,104 @@ def translateTokens(tokens):
             # now that we know the class name, parent name (if present) and more
             # we can piece together the outer skeleton of the class, and leave space to put the inner code inside
             classform = defs["class"]["form"];
-            print(classform)
 
+            bodystart = -1;
+
+            # Todo make this a function and also parse conditionals before adding
             for formline in classform:
                 cl = formline.replace("@N", ident.name);
                 cl = cl.replace("@S", ident.parentname);
+
+                if formline == "@B":
+                    bodystart = cursor;
                 
-                outtokens.append(cl)
+                outtokens.insert(cursor, cl);
+                cursor += 1;
+
+            if bodystart == -1:
+                exitWithError(currentline, "Syntax error: class form has no body")
+
+            cursor = bodystart;
+            # the @B must be removed so the inner code can go there instead
+            outtokens.pop(cursor);
+
+            continue;
+
+        if t == "function":
+            if nind >= len(tokens):
+                exitWithError(currentline, "Syntax error: no name for function")
+                
+            # the next token will be the name of the function
+            nt = tokens[nind];
+            if not isIdentifier(nt):
+                exitWithError(currentline, "Syntax error: invalid function name")
+            
+            ident = Identifier(nt, "function"); identifiers[nt] = ident;
+            skipcounter += 1;
+
+            funcform = defs["function"]["form"];
+
+            # if this function is directly inside a class definition, and the function name is the same as the class name
+            # then this is a constructor, and it has the ability to be formatted differently from other funcs
+            if len(tree) > 0:
+                treetop = tree[-1]; treetoptype = treetop.itype
+                if treetoptype == "class" and nt == treetop.name:
+                    funcform = defs["class"]["constructor"]["form"];
+
+            tree.append( ident );
+
+            # now the parameters of the function must be gotted so they can be passed to the @P section
+
+            print(funcform)
             
     return outtokens;
 
-def seperateTokens( dic ):
+# iterates backwards, upon finding matching character sequence, it splits one string into three:
+# the part before, the sequence itself, and the part after
+def seperateTokens(tokenlist, lonetoken):
+    for i in range(len(tokenlist)-1, -1, -1):     
+        bind = 1;
+        while bind != -1:
+            bind = tokenlist[i].rfind(lonetoken)
+            if bind == -1: break
+                    
+            before = tokenlist[i][:bind];
+            after = tokenlist[i][bind + len(lonetoken):];
+
+            tokenlist.pop(i)
+            tokenlist.insert(i, after)
+            tokenlist.insert(i, lonetoken)
+            tokenlist.insert(i, before)
+
+    # removing any blank tokens
+    for tind in range(len(tokenlist)-1, -1, -1):
+        t = tokenlist[tind]
+        if t == "":
+            tokenlist.pop(tind);
+
+def seperateTokensInDict( dic ):
     for k, v in dic.items():
-        print(k)
         if type(v) is dict:
-            seperateTokens(v)
+            seperateTokensInDict(v)
             
         if k == "form":
             # the sequences @B and @P are seperated into their own tokens
-            for i in range(len(v)-1, -1, -1):
-                
-                bind = 1;
-                while bind != -1:
-                    bind = v[i].rfind("@B")
-                    if bind == -1: break
-                    
-                    before = v[i][:bind]; #print("before: " + before)
-                    after = v[i][bind+2:]; #print("after: " +  after)
-
-                    v.pop(i)
-                    v.insert(i, after)
-                    v.insert(i, "@B")
-                    v.insert(i, before)
-                    
+            seperateTokens(v, "@B");
+            seperateTokens(v, "@P");       
 
 def parseDefinitions(defs):
 
     # Tokens like @B and @P, which will have stuff inserted at their position, are seperated so that
     # their indices will be useful and simple to deal with later on in the transpilation
-    seperateTokens(defs)
+    seperateTokensInDict(defs)
     
     return defs;
 
 def main():
     args = sys.argv
     arglength = len(args);
-    if arglength != 4:
-        print("\nWrong number of argmuents. Usage: \npython twig.py [file in] [def] [file out]")
+    if arglength != 3:
+        print("\nWrong number of argmuents. Usage: \npython twig.py [file in] [def]")
         return;
 
     # loading the definitions of the target language
@@ -203,7 +226,8 @@ def main():
     in_tokens = tokenize(in_lines);
     out_tokens = translateTokens(in_tokens);
 
-    out_file = open( "out/" + args[3], "w");
+    out_filename = args[1].replace(".twig", defs["fileextension"]);
+    out_file = open( "out/" + out_filename, "w");
     for token in out_tokens:
         out_file.write(token);
     out_file.close();

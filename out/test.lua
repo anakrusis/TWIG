@@ -1,0 +1,1 @@
+Test1 = {}; Test1.__index = Test1; @B

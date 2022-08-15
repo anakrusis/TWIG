@@ -35,6 +35,8 @@
 			]
 		}
 	},
+	
+	"fileextension": ".lua",
 
 	"for": {
 		"form": "for",

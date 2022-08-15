@@ -1,1 +1,1 @@
-Test1 = {}; Test1.__index = Test1; @B
+class Test1 extends Test2{  }
