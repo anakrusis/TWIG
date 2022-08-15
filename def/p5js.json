@@ -5,8 +5,8 @@
 	"class": {
 		"form": [ 
 			"class @N",
-			"extends @S",
-			"{@B}"
+			" extends @S",
+			"{ @B }"
 		],
 		
 		"conditions": [

@@ -103,7 +103,7 @@ def translateTokens(tokens):
         if t == "\n":
             currentline += 1; continue;
 
-        print(t)
+        #print(t)
 
         #if t == "}":
             #tree.pop();
@@ -140,10 +140,46 @@ def translateTokens(tokens):
             # we can piece together the outer skeleton of the class, and leave space to put the inner code inside
             classform = defs["class"]["form"];
             print(classform)
-    return;
 
-def parseDefinitions():
-    return;
+            for formline in classform:
+                cl = formline.replace("@N", ident.name);
+                cl = cl.replace("@S", ident.parentname);
+                
+                outtokens.append(cl)
+            
+    return outtokens;
+
+def seperateTokens( dic ):
+    for k, v in dic.items():
+        print(k)
+        if type(v) is dict:
+            seperateTokens(v)
+            
+        if k == "form":
+            # the sequences @B and @P are seperated into their own tokens
+            for i in range(len(v)-1, -1, -1):
+                
+                bind = 1;
+                while bind != -1:
+                    bind = v[i].rfind("@B")
+                    if bind == -1: break
+                    
+                    before = v[i][:bind]; #print("before: " + before)
+                    after = v[i][bind+2:]; #print("after: " +  after)
+
+                    v.pop(i)
+                    v.insert(i, after)
+                    v.insert(i, "@B")
+                    v.insert(i, before)
+                    
+
+def parseDefinitions(defs):
+
+    # Tokens like @B and @P, which will have stuff inserted at their position, are seperated so that
+    # their indices will be useful and simple to deal with later on in the transpilation
+    seperateTokens(defs)
+    
+    return defs;
 
 def main():
     args = sys.argv
@@ -156,6 +192,7 @@ def main():
     defs_file = open( "def/" + args[2], "r" );
     global defs
     defs = json.loads(defs_file.read())
+    defs = parseDefinitions(defs);
     defs_file.close();
 
     # now loading up the input file to be parsed
@@ -164,6 +201,11 @@ def main():
     in_file.close();
 
     in_tokens = tokenize(in_lines);
-    translateTokens(in_tokens);
+    out_tokens = translateTokens(in_tokens);
+
+    out_file = open( "out/" + args[3], "w");
+    for token in out_tokens:
+        out_file.write(token);
+    out_file.close();
 
 main();
