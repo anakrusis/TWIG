@@ -15,6 +15,9 @@ identifiers = {};
 
 def tokenize(lines):
     tokens = [];
+
+    # todo: string literal must not be split up into multiple tokens (because the space separation damages the strings)
+    
     # first splitting up tokens by spaces and line breaks in the default fashion    
     for line in lines:
         tokens.extend( line.split() );
@@ -49,6 +52,29 @@ def isIdentifier(token):
     else:
         return False
 
+# generates a structure like a class or a function given a table of replacements
+# (names and stuff)
+def generateForm(replacetable):
+    bodystart = -1;
+
+    # Todo parse conditionals before adding
+    for formline in classform:
+        cl = formline.replace("@N", ident.name);
+        cl = cl.replace("@S", ident.parentname);
+
+        if formline == "@B":
+            bodystart = cursor;
+        
+        outtokens.insert(cursor, cl);
+        cursor += 1;
+
+    if bodystart == -1:
+        exitWithError(currentline, "Syntax error: class form has no body")
+
+    cursor = bodystart;
+    # the @B must be removed so the inner code can go there instead
+    outtokens.pop(cursor);
+
 def translateTokens(tokens):
     # list of what objects we are currently in from shallow to deep
     # I might make this list contain both the name and starting index of the object, and possibly more info like type
@@ -62,7 +88,7 @@ def translateTokens(tokens):
 
     currentline = 1;
     # what token index in outtokens to insert stuff at
-    cursor = 0;
+    global cursor; cursor = 0;
 
     for tind in range(0, len(tokens)):
         if skipcounter > 0:
@@ -112,25 +138,7 @@ def translateTokens(tokens):
             # we can piece together the outer skeleton of the class, and leave space to put the inner code inside
             classform = defs["class"]["form"];
 
-            bodystart = -1;
 
-            # Todo make this a function and also parse conditionals before adding
-            for formline in classform:
-                cl = formline.replace("@N", ident.name);
-                cl = cl.replace("@S", ident.parentname);
-
-                if formline == "@B":
-                    bodystart = cursor;
-                
-                outtokens.insert(cursor, cl);
-                cursor += 1;
-
-            if bodystart == -1:
-                exitWithError(currentline, "Syntax error: class form has no body")
-
-            cursor = bodystart;
-            # the @B must be removed so the inner code can go there instead
-            outtokens.pop(cursor);
 
             continue;
 

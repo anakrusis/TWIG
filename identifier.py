@@ -4,3 +4,4 @@ class Identifier:
         self.name = name
         self.parentname = ""
         self.itype = itype
+        self.properties = {}
