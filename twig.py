@@ -6,12 +6,12 @@
 import json
 import sys
 
+import lexer as Lexer
 from identifier import Identifier
+from translator import Translator
 
 keywords = ["class","extends","false","for","function","if","return","true","while"]
 lonetokens = ["{","}","(",")","#",";",".","=","+","-","*","/","\""]
-
-identifiers = {};
 
 def tokenize(lines):
     tokens = [];
@@ -35,141 +35,6 @@ def tokenize(lines):
 
 def exitWithError(line, message):
     sys.exit(message + " on line " + str(line))
-
-# Identifiers are the user defined names of things
-def isIdentifier(token):
-    try:
-        keyind = keywords.index(token)
-    except:
-        pass;
-    else:
-        return False
-
-    try:
-        ltind = lonetokens.index(token)
-    except:
-        return True
-    else:
-        return False
-
-# generates a structure like a class or a function given a table of replacements
-# (names and stuff)
-def generateForm(replacetable):
-    bodystart = -1;
-
-    # Todo parse conditionals before adding
-    for formline in classform:
-        cl = formline.replace("@N", ident.name);
-        cl = cl.replace("@S", ident.parentname);
-
-        if formline == "@B":
-            bodystart = cursor;
-        
-        outtokens.insert(cursor, cl);
-        cursor += 1;
-
-    if bodystart == -1:
-        exitWithError(currentline, "Syntax error: class form has no body")
-
-    cursor = bodystart;
-    # the @B must be removed so the inner code can go there instead
-    outtokens.pop(cursor);
-
-def translateTokens(tokens):
-    # list of what objects we are currently in from shallow to deep
-    # I might make this list contain both the name and starting index of the object, and possibly more info like type
-    tree = [];
-    # for skipping over tokens if they dont need to be handled, or were previously handled
-    skipcounter = 0;
-    # list of user-defined things
-    identifiers = {};
-
-    outtokens = [];
-
-    currentline = 1;
-    # what token index in outtokens to insert stuff at
-    global cursor; cursor = 0;
-
-    for tind in range(0, len(tokens)):
-        if skipcounter > 0:
-            skipcounter -= 1;
-            continue;
-        
-        t = tokens[tind];        
-        nind = tind + 1;
-
-        if t == "\n":
-            currentline += 1; continue;
-
-        #print(t)
-
-        #if t == "}":
-            #tree.pop();
-        
-        if t == "class":
-            if nind >= len(tokens):
-                exitWithError(currentline, "Syntax error: no name for class")
-
-            # the next token will be the name of the class
-            nt = tokens[nind];
-            if not isIdentifier(nt):
-                exitWithError(currentline, "Syntax error: invalid class name")
-                
-            ident = Identifier(nt, "class"); identifiers[nt] = ident;
-            skipcounter += 1;
-
-            # the next next token could be "extends"...
-            nnind = nind + 1;
-            if nnind < len(tokens):
-                nnt = tokens[nnind];
-                if nnt == "extends":
-
-                    # ...then the next next next token would be the name of the parent class.
-                    nnnind = nnind + 1;
-                    if nnnind < len(tokens):
-                        nnnt = tokens[nnnind];
-                        ident.parentname = nnnt;
-                        
-                        skipcounter += 2;
-
-            tree.append( ident );
-
-            # now that we know the class name, parent name (if present) and more
-            # we can piece together the outer skeleton of the class, and leave space to put the inner code inside
-            classform = defs["class"]["form"];
-
-
-
-            continue;
-
-        if t == "function":
-            if nind >= len(tokens):
-                exitWithError(currentline, "Syntax error: no name for function")
-                
-            # the next token will be the name of the function
-            nt = tokens[nind];
-            if not isIdentifier(nt):
-                exitWithError(currentline, "Syntax error: invalid function name")
-            
-            ident = Identifier(nt, "function"); identifiers[nt] = ident;
-            skipcounter += 1;
-
-            funcform = defs["function"]["form"];
-
-            # if this function is directly inside a class definition, and the function name is the same as the class name
-            # then this is a constructor, and it has the ability to be formatted differently from other funcs
-            if len(tree) > 0:
-                treetop = tree[-1]; treetoptype = treetop.itype
-                if treetoptype == "class" and nt == treetop.name:
-                    funcform = defs["class"]["constructor"]["form"];
-
-            tree.append( ident );
-
-            # now the parameters of the function must be gotted so they can be passed to the @P section
-
-            print(funcform)
-            
-    return outtokens;
 
 # iterates backwards, upon finding matching character sequence, it splits one string into three:
 # the part before, the sequence itself, and the part after
@@ -221,7 +86,6 @@ def main():
 
     # loading the definitions of the target language
     defs_file = open( "def/" + args[2], "r" );
-    global defs
     defs = json.loads(defs_file.read())
     defs = parseDefinitions(defs);
     defs_file.close();
@@ -231,8 +95,9 @@ def main():
     in_lines = in_file.readlines();
     in_file.close();
 
+    translator = Translator();
     in_tokens = tokenize(in_lines);
-    out_tokens = translateTokens(in_tokens);
+    out_tokens = translator.translateTokens(in_tokens, defs);
 
     out_filename = args[1].replace(".twig", defs["fileextension"]);
     out_file = open( "out/" + out_filename, "w");

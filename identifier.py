@@ -2,6 +2,10 @@
 class Identifier:
     def __init__(self, name, itype):
         self.name = name
-        self.parentname = ""
         self.itype = itype
-        self.properties = {}
+        
+        # for classes
+        self.supername = ""
+
+        # everything defined within scope of this identifier
+        self.children = {}
